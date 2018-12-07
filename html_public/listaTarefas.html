@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Tarefas</title>
+  <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+  <meta name="theme-color" content="#fafafa" />
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+    crossorigin="anonymous">
+
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="LT">
+    <meta name="apple-mobile-web-app-title" content="LT">
+    <meta name="msapplication-starturl" content="/Tarefas.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <style>
+     
+     .alert {
+      margin: 1px;
+    }
+
+    body{
+      background-color: #ffffff;
+    }
+
+    .topo {
+      background: rgb(221, 221, 221);
+      padding: 10px;
+      align-items: center;
+    }
+
+    .terminado {
+      text-decoration: line-through;
+    }
+  </style>
+
+</head>
+
+<body>
+  <div class="container">
+    <div class="titulo row topo">
+      <div class=" col-md-8 col-sm-12">
+        <h3>Lista de Tarefas</h3>
+         </div>
+          <div class="col-md-2 col-sm-12"></div>
+          <div class="col-md-2 col-sm-12">
+            <input type="checkbox" class="form-check-input" id="mostrar-terminadas"> Mostrar Terminadas
+          </div>
+            <button type="button" class="btn btn-info" id="botaoNovaTarefa">Nova Tarefa</button>
+            <button type="button" class="btn btn-danger btn-deletar" onclick="remove()">Remover Terminadas</button>
+          </div>
+    </div>
+  </div>
+
+  <div class="container" id="tabela">
+    <div class="alert alert-success" role="alert" style="display: none">
+      Nova tarefa inserida com sucesso
+    </div>
+
+    <div class="alert alert-danger alert-remover" role="alert" style="display: none">
+      Tarefas realizadas remolvidas com sucesso
+    </div>
+
+    <div class="row tabela">
+      <table class="col-md-12">
+        <thead>
+          <tr>
+            <th scope="col">Terminada</th>
+            <th style="width: 100%" scope="col">Tarefa</th>
+            <th scope="col">Prazo</th>
+          </tr>
+        </thead>
+        <tbody id="table-tarefas">
+        </tbody>
+      </table>
+
+    </div>
+
+    <div class="container" id="tabela-finalizadas" style="display: none">
+
+      <div class="row tabela-finalizadas">
+        <h4>Tarefas finalizadas</h4>
+        <table class="table table-striped col-md-12">
+            <thead>
+             <tr>
+                <th scope="col">Terminada</th>
+                <th style="width: 70%" scope="col">Tarefa</th>
+                <th scope="col">Prazo</th>
+              </tr>
+            </thead>
+           <tbody id="table-tarefas-finalizadas">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="container" id="nova-tarefa" style="display: none">
+
+    <div class="row">
+      <h4 class="titulo">Nova Tarefa</h4>
+    </div>
+
+    <div class="row">
+
+      <form class="col-md-12" id="form-tarefa-create" style="width: 100%;">
+        <div class="alert alert-danger" role="alert" style="display: none" id="error">
+          Insira todos os dados!
+        </div>
+        <div class="form-group">
+           <label for="nomeTarefa">Tarefa</label>
+           <input type="text" class="form-control" name="nomeTarefa" id="nomeTarefa" placeholder="Insira um tarefa...">
+        </div>
+        <div class="form-group">
+           <label for="dataPrazo">Prazo</label>
+           <input type="text" class="form-control" id="dataPrazo" name="dataPrazo" placeholder="dd/mm/aaaa">
+        </div>
+        <button type="button" class="btn btn-secondary btn-cancelar" id="botaoCancelar">Cancelar</button>
+        <button type="submit" class="btn btn-primary btn-nova-tabela">Nova Tarefa</button>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  class Utils {
+    static dateFormat(date) {
+      return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear() + ' ' + date.getHours() + ':' + date.getMinutes();
+    }
+  }
+</script>
+
+  <script>
+    class Tarefa {
+
+      constructor(nomeTarefa, dataPrazo, terminada) {
+        this._id;
+        this._nomeTarefa = nomeTarefa;
+        this._dataPrazo = dataPrazo;
+        this._terminada = terminada;
+        this._dataRegistro = new Date();
+
+      }
+
+      get id() {
+        return this._id;
+      }
+
+      get terminada() {return this._terminada;}
+
+      get dataTarefa() {
+        return this._dataPrazo;
+      }
+
+      set name(name) {
+        this._name = name;
+      }
+
+      get nomeTarefa() {
+        return this._nomeTarefa;
+      }
+
+      set nomeTarefa(nomeTarefa) {
+        this._nomeTarefa = nomeTarefa;
+      }
+
+      loadFromJSON(json) {
+        for (let nomeTarefa in json) {
+          switch (nomeTarefa) {
+            case '_dataRegistro':
+              this[nomeTarefa = new Date(json[name])];
+              break;
+            default:
+              this[nomeTarefa] = json[nomeTarefa]
+          }
+        }
+      }
+
+      static getTarefaStorage() {
+        let tarefas = [];
+          if (localStorage.getItem("tarefas")) {
+            tarefas = JSON.parse(localStorage.getItem("tarefas"));
+          }
+          return tarefas;
+      }
+
+      getNewID() {
+        let tarefasID = parseInt(localStorage.getItem("tarefasID"));
+          if (!tarefasID > 0) tarefasID = 0;
+           tarefasID++;
+           localStorage.setItem("tarefasID", tarefasID);
+         return tarefasID;
+      }
+
+      save() {
+        let tarefas = Tarefa.getTarefaStorage();
+          if (this.id > 0) {
+            tarefas.map(t => {
+              if (t._id == this.id) {
+                Object.assign(t, this);
+              }
+          return t;
+          });
+        }else{
+          this._id = this.getNewID();
+          tarefas.push(this);
+        }
+        localStorage.setItem("tarefas", JSON.stringify(tarefas));
+      }
+
+      remove() {
+        let tarefas = Tarefa.getTarefaStorage();
+        tarefas.forEach((tarefaData, index) => {
+          if (tarefaData._terminada == true) {
+            tarefas.splice(index, 1);
+          }
+        });
+        localStorage.setItem("tarefas", JSON.stringify(tarefas));
+      }
+    }
+  </script>
+
+  <script>
+
+    class TarefasController {
+
+      constructor(formIdCreate, tableId, tableFinalizadasId) {
+        this.formElement = document.getElementById(formIdCreate);
+        this.tableElement = document.getElementById(tableId);
+        this.tableFinalizadas = document.getElementById(tableFinalizadasId);
+
+        this.onSubmit();
+        this.selectAll();
+        this.addEventsButtons();
+      }
+
+      onSubmit() {
+        this.formElement.addEventListener("submit", event => {
+
+          event.preventDefault();
+          let values = this.getValues(this.formElement);
+          let btn = this.formElement.querySelector(".btn-nova-tabela");
+
+          btn.disabled = true;
+
+          if (!values) {
+            document.querySelector("#error").style.display = "block";
+            this.formElement.reset();
+            btn.disabled = false;
+           return false;
+          }
+
+          values.save();
+          this.addLine(values);
+          this.formElement.reset();
+          btn.disabled = false;
+          this.showList();
+          document.querySelector("#error").style.display = "none";
+          document.querySelector(".alert-success").style.display = "block";
+        });
+      }
+
+      getValues(formElement) {
+
+        let tarefa = {};
+        let isValid = true;
+
+        [...formElement.elements].forEach(function (field, index) {
+          if (['nomeTarefa', 'dataPrazo'].indexOf(field.name) > -1 && !field.value) {
+            field.parentElement.classList.add('is-invalid');
+            isValid = false;
+          }else{
+            tarefa[field.name] = field.value;
+          }
+        });
+        if (!isValid) {
+          return false;
+        }
+        return new Tarefa(
+          tarefa.nomeTarefa,
+          tarefa.dataPrazo,
+          tarefa.terminada = false
+        );
+      }
+
+      addEventsButtons() {
+        document.getElementById("botaoNovaTarefa").addEventListener("click", e => {
+          this.showPanelCreate();
+        });
+
+        document.getElementById("botaoCancelar").addEventListener("click", c => {
+          document.querySelector("#error").style.display = "none";
+          this.formElement.reset();
+          this.showList();
+        });
+
+        document.getElementById("mostrar-terminadas").addEventListener("click", b => {
+          this.mostrarFinalizadas();
+        });
+
+        document.querySelector(".btn-deletar").addEventListener("click", e => {
+            let tarefas = JSON.parse(localStorage.getItem("tarefas"));
+            tarefas.slice(0).forEach((tarefaData, index) => {
+              if (tarefaData._terminada == true) {
+                document.querySelector(".alert-remover").style.display = "block";
+                tarefas.splice(tarefas.indexOf(tarefaData), 1);
+                var x = document.getElementById(tarefaData._id).parentElement;
+                x.parentElement.remove();
+              }
+            });
+            localStorage.setItem("tarefas", JSON.stringify(tarefas));
+        })
+      }
+
+
+      addLine(dataTarefa) {
+        let tr = this.getTr(dataTarefa);
+          if (dataTarefa._terminada) {
+            this.tableFinalizadas.appendChild(tr);
+          }else{
+          this.tableElement.appendChild(tr);
+        }
+      }
+
+      getTr(dataTarefa, tr = null) {
+        if (tr === null) tr = document.createElement('tr');
+         tr.dataset.tarefa = JSON.stringify(dataTarefa);
+          if (dataTarefa._terminada) {
+          tr.innerHTML = `<tr>
+                            <th scope="row">
+                              <input type="checkbox" id="${dataTarefa._id}" class="checkbox-finaliza" name="${dataTarefa.nomeTarefa}" checked>
+                            </th>
+                              <td class="terminado" name="${dataTarefa.nomeTarefa}">${dataTarefa.nomeTarefa}</td>
+                              <td class="terminado" name="${dataTarefa.nomeTarefa}">${dataTarefa._dataPrazo}</td>
+                          </tr>`;
+          }else{
+          tr.innerHTML = `<tr>
+                            <th scope="row">
+                              <input type="checkbox" id="${dataTarefa._id}" class="checkbox-finaliza" name="${dataTarefa.nomeTarefa}">
+                            </th>
+                              <td class="" name="${dataTarefa.nomeTarefa}">${dataTarefa.nomeTarefa}</td>
+                              <td class="" name="${dataTarefa.nomeTarefa}">${dataTarefa._dataPrazo}</td>
+                         </tr>`;
+        }
+        this.addEventTr(tr);
+        return tr;
+      }
+
+      addEventTr(tr) {
+        tr.querySelector(".checkbox-finaliza").addEventListener("click", e => {
+          var json = localStorage.getItem("tarefas");
+          json = JSON.parse(json);
+
+          for (let i = 0; i < json.length; i++) {
+            if (e.target.id == json[i]._id) {
+              if (json[i]._terminada == false) {
+                json[i]._terminada = true;
+                tr.setAttribute("class", "terminado");
+                document.getElementById("table-tarefas-finalizadas").appendChild(tr);
+              }else{
+                json[i]._terminada = false;
+                tr.setAttribute("class", "");
+                document.getElementById("table-tarefas").appendChild(tr);
+              }
+            }
+          }
+          json = JSON.stringify(json);
+          localStorage.setItem("tarefas", json);
+        });
+      }
+
+      selectAll() {
+        let tarefas = Tarefa.getTarefaStorage();
+        tarefas.forEach(dataTarefa => {
+          let tarefa = new Tarefa();
+          tarefa.loadFromJSON(dataTarefa);
+          this.addLine(tarefa);
+        });
+      }
+
+      showPanelCreate() {
+        document.querySelector(".alert-remover").style.display = "none";
+        document.querySelector(".alert-success").style.display = "none";
+        document.querySelector("#nova-tarefa").style.display = "block";
+        document.querySelector("#tabela").style.display = "none";
+      }
+
+      showList() {
+        document.querySelector("#nova-tarefa").style.display = "none";
+        document.querySelector("#tabela").style.display = "block";
+      }
+
+      mostrarFinalizadas() {
+        if (document.querySelector("#tabela-finalizadas").style.display == "none") {
+          document.querySelector("#tabela-finalizadas").style.display = "block";
+        }
+        else {
+          document.querySelector("#tabela-finalizadas").style.display = "none";
+        }
+      }
+    }
+  </script>
+
+<script>let tarefasController = new TarefasController("form-tarefa-create", "table-tarefas", "table-tarefas-finalizadas");</script>
+
+  <script type="text/javascript">
+    // https://developers.google.com/web/fundamentals/primers/service-workers/
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').then(function (registration) {
+          console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        }).catch(function (err) {
+          console.log('ServiceWorker registration failed: ', err);
+        });
+      });
+    }
+  </script>
+</body>
+
+</html>
